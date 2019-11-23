@@ -7,6 +7,6 @@
     <title>Document</title>
 </head>
 <body>
-    <h1 color="red">YOU HAVE BEEN BLOCKED</h1>
+    <h1>YOU HAVE BEEN BLOCKED</h1>
 </body>
 </html>

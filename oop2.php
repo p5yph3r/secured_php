@@ -1,10 +1,14 @@
 <?php
+
     /*
     This is an simple script which can detect possible injection attacks like XSS, SQli through your text input tags,
     It handles the malicious XSS Payloads, if html tags are passed they are converted into string and displayed.
     The main goal of this script is to easily sanitize every input, which would result in a secured webapp. 
 
     */
+    session_start();
+    include('libs/nocsrf.php');
+
     class sanitizationProcess{
         # BLacklisted IP's of errors
         private $blacklist = array();
@@ -112,15 +116,37 @@
     } // class SanitizationProcess Ends 
 
 
-    # Main Function below
-    if (isset($_GET['submit'])){
+    if ( isset( $_POST[ 'submit' ] ) )
+{
+    try
+    {
+        // Run CSRF check, on POST data, in exception mode, for 10 minutes, in one-time mode.
+        NoCSRF::check( 'csrf_token', $_POST, true, 60*10, false );
+        // form parsing, DB inserts, etc.
+        // ...
+        ### FORM PARSING
         $sanitization = new sanitizationProcess;
-        $user_input = $sanitization->sanity_check($_GET['input1']);
-        $sql = $sanitization->sanity_check($_GET['sql']);
+        $user_input = $sanitization->sanity_check($_POST['input1']);
+        $sql = $sanitization->sanity_check($_POST['sql']);
 
         echo "First Input is ".$user_input."<br> Second Input is ".$sql."<br> Both are sanitized.";
+        $result = 'CSRF check passed. Form parsed.';
     }
+    catch ( Exception $e )
+    {
+        // CSRF attack detected
+        header("Location: blocked.php");
+        die();
+    }
+}
+else
+{
+    $result = 'No post data yet.';
+}
+// Generate CSRF token to use in form hidden field
+$token = NoCSRF::generate( 'csrf_token' );
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -130,7 +156,8 @@
     <title>Document</title>
 </head>
 <body>
-    <form action = "" method="GET"> 
+    <form action = "" method="POST">
+        <input type="hidden" name="csrf_token" value="<?php echo $token; ?>">
         <input type="text" name="input1">
         <input type="text" name="sql">
         <input type="submit" name="submit">
